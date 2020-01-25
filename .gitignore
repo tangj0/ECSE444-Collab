@@ -18,7 +18,6 @@ nohup.out
 *.scvd
 *.uvguix.jtang
 *.uvoptx
-*.uvprojx
 */Listings/
 */RTE/
 */Objects/
