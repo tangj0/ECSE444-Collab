@@ -32,22 +32,23 @@ int main(void)
   {
 		//********** Student code here *************//
 		
-		//LD2 pin (green one, LED2) is controlled by pin PB14. Writing a value of "1" to the GPIO should be written to turn it on.
+		//LD2 pin (green one, LED2) is controlled by pin PB14. Writing a value of "0" (active low) to the GPIO to turn it on.
 		//the button that we should be using is the USER button (B2), and is accessed via EXT1113 or SW-PUSH-CMS_BLUE, pin PC13
 		
 		//Controlling LED pins
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
+		/*if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 		}
 		else {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
-		}
+		}*/
 		
 		//DAC
 		//HAL_DAC_Start (DAC_HandleTypeDef *hdac, DAC_CHANNEL_1)
 		//HAL_DAC_Start (DAC_HandleTypeDef *hdac, DAC_CHANNEL_2)
 	  //HAL_DAC_SetValue(DAC_HandleTypeDef * hdac, uint32_t Channel, uint32_t Alignment, uint32_t Data)
 		//
+		
 		
   }
 }
