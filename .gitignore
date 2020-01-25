@@ -7,12 +7,23 @@
 *.zip
 *.gz
 
-#No compiled files
+#No compile/build files
 */bin/
 *.jar
 *.class
+*.axf
+*.build_log.htm
+*.hex
+*.htm
+*.map
+*.dep
+*.crf
+*.o
+*.lst
 
 nohup.out
+*.un~
+.gitignore~
 
 #No uVision projects and stuff
 *.scvd
@@ -21,3 +32,4 @@ nohup.out
 */Listings/
 */RTE/
 */Objects/
+
