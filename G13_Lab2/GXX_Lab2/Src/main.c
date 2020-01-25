@@ -27,6 +27,11 @@ int main(void)
 	/* Turn on LED */
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 	
+	/* Start Channel, our code */
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+	//HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+	int counter = 0;
+	
   /* Infinite loop */
   while (1)
   {
@@ -36,7 +41,7 @@ int main(void)
 		//the button that we should be using is the USER button (B2), and is accessed via EXT1113 or SW-PUSH-CMS_BLUE, pin PC13
 		
 		//Controlling LED pins
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
+		if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 		}
 		else {
@@ -44,10 +49,21 @@ int main(void)
 		}
 		
 		//DAC
-		//HAL_DAC_Start (DAC_HandleTypeDef *hdac, DAC_CHANNEL_1)
-		//HAL_DAC_Start (DAC_HandleTypeDef *hdac, DAC_CHANNEL_2)
-	  //HAL_DAC_SetValue(DAC_HandleTypeDef * hdac, uint32_t Channel, uint32_t Alignment, uint32_t Data)
-		//
+		//HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2);
+		
+		counter++;
+		if (counter > 2000) {
+			counter = 0;
+		}
+			
+		if (counter <= 1000) {
+			HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 4095);
+			continue;
+		}
+		else {
+			HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
+		}
+		
 		
   }
 }
