@@ -1,6 +1,8 @@
 #include "main.h"
 #include "stm32l4xx_hal.h"
 
+#include "math.h"
+
 /* Private variables ---------------------------------------------------------*/
 DAC_HandleTypeDef hdac1;
 
@@ -28,9 +30,10 @@ int main(void)
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 	
 	/* Start Channel, our code */
-	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
-	//HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1); //Channel 1 = D7
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2); //Channel 2 = D13
 	int counter = 0;
+	int counter2 = 0;
 	
   /* Infinite loop */
   while (1)
@@ -51,19 +54,27 @@ int main(void)
 		//DAC
 		//HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2);
 		
-		counter++;
+		
+		//Square wave
+		//counter++;
 		if (counter > 2000) {
 			counter = 0;
 		}
-			
-		if (counter <= 1000) {
-			HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 4095);
-			continue;
-		}
 		else {
-			HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
+			counter++;
+			if (counter <= 1000) {
+				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 4095);
+				//continue;
+			}
+			else {
+				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
+			}
 		}
+	
 		
+		//Sine wave
+		counter2++;
+		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 4095*sin(3.14159*counter2/180));
 		
   }
 }
