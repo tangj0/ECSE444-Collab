@@ -50,31 +50,22 @@ int main(void)
 		else {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
 		}
-		
-		//DAC
-		//HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2);
-		
-		
-		//Square wave
-		//counter++;
-		if (counter > 2000) {
-			counter = 0;
-		}
-		else {
+
 			counter++;
 			if (counter <= 1000) {
 				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 4095);
-				//continue;
 			}
-			else {
+			else if (counter > 1000 && counter < 2000) {
 				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
 			}
-		}
-	
+			else {
+				counter = 0;
+			}
 		
 		//Sine wave
 		counter2++;
-		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 4095*sin(3.14159*counter2/180));
+		//HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 4095*sin(3.14159*counter2/180));
+		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)((4095/2) * sin(3.14159*counter2/180) + 4095/2));
 		
   }
 }
