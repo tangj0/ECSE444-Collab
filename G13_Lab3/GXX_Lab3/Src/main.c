@@ -12,6 +12,7 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
 	char ch[5] = {'j','o','b','s','\n'};
+	char transmit[2] = {'a', 'y'};
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -26,7 +27,20 @@ int main(void)
   {
 
 		HAL_Delay(100);
-		HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000);
+		
+		//code that was given to us
+		
+		//HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000);
+		//HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000);
+		
+		//the first pre part of the code. basically, the revieve writes to the element of the array, and then we check to see
+		//if the letter we typed matches what's been written there. transmit then prints the letter y. The delays are weird,
+		//and if you push x too many times, it overflows and you need to hit the reset button on the board.
+		HAL_UART_Receive(&huart1, (uint8_t *)&transmit[0], 1, 30000);
+		if (transmit[0] == 'x') {
+			HAL_UART_Transmit(&huart1, (uint8_t *)&transmit[1], 1, 30000);
+		}
+		
 
   }
 }
@@ -137,6 +151,12 @@ void _Error_Handler(char *file, int line)
   while(1)
   {
   }
+}
+
+int UART_Print_String(UART_HandleTypeDef* huart, char *chp, int numCh) {
+	for (int i = 0; i < numCh; i++) {
+		HAL_UART_Transmit(huart, (uint8_t *)&chp[i], 1, 1000);
+	}
 }
 
 #ifdef  USE_FULL_ASSERT
