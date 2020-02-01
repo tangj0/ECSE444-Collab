@@ -8,6 +8,7 @@ DMA_HandleTypeDef hdma_usart1_tx;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+int UART_Print_String(UART_HandleTypeDef* huart, char* array_p, int array_len);
 
 int main(void)
 {
@@ -30,20 +31,33 @@ int main(void)
 		
 		//code that was given to us
 		
-		//HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000);
-		//HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000);
+		//HAL_UART_Transmit(&huart1, (uint8_t *)&ch[0], 5, 30000); //P1037
 		
 		//the first pre part of the code. basically, the revieve writes to the element of the array, and then we check to see
 		//if the letter we typed matches what's been written there. transmit then prints the letter y. The delays are weird,
 		//and if you push x too many times, it overflows and you need to hit the reset button on the board.
-		HAL_UART_Receive(&huart1, (uint8_t *)&transmit[0], 1, 30000);
-		if (transmit[0] == 'x') {
-			HAL_UART_Transmit(&huart1, (uint8_t *)&transmit[1], 1, 30000);
-		}
 		
+		//HAL_UART_Receive(&huart1, (uint8_t *)&transmit[0], 1, 30000);
+		
+//		if (transmit[0] == 'x') {
+//			HAL_UART_Transmit(&huart1, (uint8_t *)&transmit[1], 1, 30000);
+//		}
+		
+		UART_Print_String(&huart1, &ch[0], 5);
 
   }
 }
+
+int UART_Print_String(UART_HandleTypeDef* huart, char* array_p, int array_len) {
+	int i;
+	for (i = 0; i< array_len; i++) {
+		if (!HAL_UART_Transmit(huart, (uint8_t *)array_p, array_len, 30000) && !HAL_UART_Receive(&huart1, (uint8_t *)array_p, 1, 30000)){
+			return 0;
+		}
+	}
+	return 1;
+}
+
 
 void SystemClock_Config(void)
 {
@@ -153,11 +167,11 @@ void _Error_Handler(char *file, int line)
   }
 }
 
-int UART_Print_String(UART_HandleTypeDef* huart, char *chp, int numCh) {
-	for (int i = 0; i < numCh; i++) {
-		HAL_UART_Transmit(huart, (uint8_t *)&chp[i], 1, 1000);
-	}
-}
+//int UART_Print_String(UART_HandleTypeDef* huart, char *chp, int numCh) {
+//	for (int i = 0; i < numCh; i++) {
+//		HAL_UART_Transmit(huart, (uint8_t *)&chp[i], 1, 1000);
+//	}
+//}
 
 #ifdef  USE_FULL_ASSERT
 void assert_failed(uint8_t* file, uint32_t line)
