@@ -64,6 +64,8 @@ static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 int UART_Print_String(UART_HandleTypeDef* huart, char* array_p, int array_len);
+int UART_Print_String_DMA(UART_HandleTypeDef* huart, uint8_t* array_p, uint16_t array_size);
+
 int ADCTemp0, ADCTemp, ones, tens;
 int sys_flag;
 /* USER CODE END PFP */
@@ -81,6 +83,8 @@ int main(void)
 {
 	char ch[5] = {'j','o','b','s','\n'};
 	char tempArr[19] = {'T', 'e', 'm', 'p', 'e', 'r', 'a', 't', 'u', 'r', 'e', ' ', '=', ' ', '3', '0', ' ', 'C', '\n'};
+	char dmaArr[30];
+	int count = 0;
   
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -116,44 +120,58 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-		
+  while (1){
 		
 		//somewhere, we need start, wait, read. There needs to be a delay between start and read or else it doesn't have time to
 		//take a sample.
 		
-		
-		//first section
+		//first section, using delay
 		//HAL_Delay(100);
 		//UART_Print_String(&huart1, &tempArr[0], 25); 
 		
+		//second section, using systick
 		if (sys_flag == 1) {
-		sys_flag = 0;
-		
-		//__HAL_ADC_CALC_TEMPERATURE
-		HAL_ADC_Start(&hadc1);
-		if (HAL_ADC_PollForConversion(&hadc1, 3000) == HAL_OK) {
-			ADCTemp0 = HAL_ADC_GetValue(&hadc1);
-			HAL_ADC_Stop(&hadc1);
-			ADCTemp = __HAL_ADC_CALC_TEMPERATURE(3300, ADCTemp0, ADC_RESOLUTION_10B);
-		}
-		
-		tens = ADCTemp/10 + '0';
-		ones = ADCTemp%10 + '0';
-		
-		tempArr[14] = tens;
-		tempArr[15] = ones;
-		
-		
-	
-		UART_Print_String(&huart1, &tempArr[0], 19);
+			sys_flag = 0;
+			
+			//__HAL_ADC_CALC_TEMPERATURE
+			HAL_ADC_Start(&hadc1);
+			
+			if (HAL_ADC_PollForConversion(&hadc1, 10000) == HAL_OK) { //3000
+				ADCTemp0 = HAL_ADC_GetValue(&hadc1);
+				HAL_ADC_Stop(&hadc1);
+				ADCTemp = __HAL_ADC_CALC_TEMPERATURE(3300, ADCTemp0, ADC_RESOLUTION_10B);
+			
+			
+				tens = ADCTemp/10 + '0';
+				ones = ADCTemp%10 + '0';
+				//only DAC to UART
+				/*tempArr[14] = tens;
+				tempArr[15] = ones;
+				UART_Print_String(&huart1, &tempArr[0], 19); */
+				
+				
+				//DAC to DMA to UART
+				if (count < 30) {
+					dmaArr[count] = tens;
+					dmaArr[count+1] = ones;
+					dmaArr[count+2] = '\n';
+					count += 3;
+				}
+				else {
+					count = 0;
+					UART_Print_String_DMA(&huart1, (uint8_t*)dmaArr, 30);
+				}
+				
+			}
 		
 		}
   }
 }
 
+//Only DAC to UART 
 //UART = Universal Serial Receiver/Transmitter 
+//UART transmit using software funciton HAL_UART_Transmit()
+//Must complete array transmission before excecuting other code = inefficient use of resources
 int UART_Print_String(UART_HandleTypeDef* huart, char* array_p, int array_len) {
 	int i;
 	for (i = 0; i< array_len; i++) { //P1037 for HAL_UART_Transmit
@@ -162,6 +180,21 @@ int UART_Print_String(UART_HandleTypeDef* huart, char* array_p, int array_len) {
 		}
 	}
 	return 1;
+}
+
+//Using DMA (ADC to DMA then DMA to UART)
+//By enabling the DMA on the UART transmit interface
+//And passing the DMA the array's start address and number of elements
+//The UART can then read the entire array from memory
+//This transmission only needs to be started in software
+//The program can move on to other tasks while the array transmission continues in the background
+int UART_Print_String_DMA(UART_HandleTypeDef* huart, uint8_t* array_p, uint16_t array_size) {
+		if (HAL_UART_Transmit_DMA(huart, array_p, array_size) == HAL_OK){
+			return 1;
+		}
+		else{
+			return 0;
+		}
 }
 
 
@@ -225,6 +258,17 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+	
+	    /**Configure the Systick interrupt time 
+    */
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000); //=1ms
+
+    /**Configure the Systick 
+    */
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+  /* SysTick_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0); //enable interrupt
 }
 
 /**
@@ -371,9 +415,11 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+	//for DMA
+	HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE END USART1_Init 2 */
-
+	
 }
 
 /** 
@@ -383,7 +429,7 @@ static void MX_DMA_Init(void)
 {
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
-
+	__HAL_LINKDMA(&huart1,hdmatx,hdma_usart1_tx);	//link DMA handle with peripheral handle
   /* DMA interrupt init */
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
@@ -391,7 +437,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
-
+	
+  
+	
 }
 
 /**
