@@ -422,6 +422,7 @@ static void MX_USART1_UART_Init(void)
 	
 }
 
+
 /** 
   * Enable DMA controller clock
   */
@@ -429,8 +430,14 @@ static void MX_DMA_Init(void)
 {
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
-	__HAL_LINKDMA(&huart1,hdmatx,hdma_usart1_tx);	//link DMA handle with peripheral handle
+	
   /* DMA interrupt init */
+	HAL_DMA_IRQHandler(&hdma_usart1_tx);
+	
+	//link DMA handle with peripheral handle
+	//copies the hdmatx field of the huart1 handle into the hdma_usart1_tx handle
+	__HAL_LINKDMA(&huart1,hdmatx,hdma_usart1_tx);	
+	
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
