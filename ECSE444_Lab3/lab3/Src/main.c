@@ -159,8 +159,8 @@ int main(void)
 				}
 				else {
 					count = 0;
-					UART_Print_String_DMA(&huart1, (uint8_t*)dmaArr, 30);
 				}
+				UART_Print_String_DMA(&huart1, (uint8_t*)dmaArr, 30);
 				
 			}
 		
