@@ -67,6 +67,7 @@ uint16_t audioArray[7501] = {512,512,512,512,512,512,512,512,512,512,512,512,512
 uint8_t transmitArray;
 int counter;
 int timerFlag;
+uint8_t buttonPress;
 
 /* USER CODE END PFP */
 
@@ -120,45 +121,50 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /*
-		if (board reset is pressed) {
-			turn on LED
-			get voice signal from the program
-		}
-		if (button pressed) {
-			play audio signal
-			set output voltage to 0V
-		}
+    
 		
+		/*
+		* Something needs to go here for importing the signal (so that we DO NOT use the array).
 		*/
 		
 		//check to see if the user pin i pressed
+//		if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
+//			buttonPress = 0;
+//		}
+		
+		//Trying to do the pin read in the loop check all in 1 step. Might be best to use the above loop and do it in 2.
 		if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
 			//Turn on the LED
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-			while (transmitArray) {
-				if (counter > 7500) {
-					//stop transmitting
-					transmitArray = 0;
-					counter = 0;
-					HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
-					
-					//set output to 0V
-					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
-					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 0);
-					
-				}
-				else {
-					//continue transmitting
-					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, audioArray[counter]);
-					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, audioArray[counter]);
-					counter++;
-				}
+			
+			if (timerFlag) {
 				
+				//This timer flag is here to make sure that we are playing the recording at the sampled rate, and not faster. 
+				//It is based on the TIM2 clock that we programmed in. Thus, it's playing at a rate of 8kHz.
+				timerFlag = 0;
+			
+				while (transmitArray) {
+					if (counter > 7500) {
+						//stop transmitting
+						transmitArray = 0;
+						counter = 0;
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+					
+						//set output to 0V
+						HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
+						HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 0);
+					
+					}
+					else {
+						//continue transmitting
+						HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, audioArray[counter]);
+						HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, audioArray[counter]);
+						counter++;
+					}
+				
+				}
 			}
-				
 		}
-		
 	
   }
   /* USER CODE END 3 */
@@ -289,7 +295,7 @@ static void MX_TIM2_Init(void)
 	/*
 	* The prescaler value is used in conjunction with the clock speed to set an overflow ~ Brandon
 	*/
-	//came default as 0, changed to a value of 1. From what I understand, this means that at each time the clock reaches
+	//came default as 0, changed to a value of 1 (not sure if this is right). From what I understand, this means that at each time the clock reaches
 	//the maximum value, there will be an interupt generated. If the value was set higher (say 2), there would be an 
 	//interrupt at each half of the clock period, etc.
   htim2.Init.Prescaler = 1;
