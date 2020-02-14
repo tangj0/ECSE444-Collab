@@ -62,6 +62,8 @@ extern DMA_HandleTypeDef hdma_usart1_tx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
+extern int timerFlag;
+//Brandon added, same use as in Lab 3. The flag is set to 1 in the irq handler. 
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -238,7 +240,7 @@ void TIM2_IRQHandler(void)
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
+	timerFlag = 1;
   /* USER CODE END TIM2_IRQn 1 */
 }
 
