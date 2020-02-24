@@ -1,0 +1,6 @@
+--cpu Cortex-M4.fp.sp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"
+-I.\RTE\_Lab6_stm
+-IC:\Users\jtang\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include
+-IC:\Users\jtang\AppData\Local\Arm\Packs\Keil\STM32L4xx_DFP\2.3.0\Drivers\CMSIS\Device\ST\STM32L4xx\Include
+--pd "__UVISION_VERSION SETA 529" --pd "_RTE_ SETA 1" --pd "STM32L475xx SETA 1"
+--list startup_stm32l475xx.lst --xref -o lab6_stm\startup_stm32l475xx.o --depend lab6_stm\startup_stm32l475xx.d "startup_stm32l475xx.s"
