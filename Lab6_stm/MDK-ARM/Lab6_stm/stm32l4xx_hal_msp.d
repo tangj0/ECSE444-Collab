@@ -1,5 +1,4 @@
 lab6_stm\stm32l4xx_hal_msp.o: ../Src/stm32l4xx_hal_msp.c
-lab6_stm\stm32l4xx_hal_msp.o: ../Inc/main.h
 lab6_stm\stm32l4xx_hal_msp.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h
 lab6_stm\stm32l4xx_hal_msp.o: ../Inc/stm32l4xx_hal_conf.h
 lab6_stm\stm32l4xx_hal_msp.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h
