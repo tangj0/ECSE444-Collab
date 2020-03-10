@@ -81,7 +81,9 @@ osThreadId currentThreadId;
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef handle;
 
-enum sensor {TEMPERATURE, HUMIDITY, MAGNETOMETER, PRESSURE, ACCELEROMETER, GYROSCOPE} sensor_thread;
+
+//mag, temp,humidity, acceleration,gyro, pressure
+enum sensor {MAGNETOMETER, TEMPERATURE, HUMIDITY, ACCELOROMETER, GYROSCOPE, PRESSURE} sensor_thread;
 //enum sensor sensorChoice;
 enum state {ON, OFF} usart_state;
 enum state button_state;
@@ -97,7 +99,7 @@ char buffer[100];
 float tempHumPresOutput; //temperature, humidity, pressure 
 float gyroOutput[3]; //gyroscope
 int16_t accMagOutput[3]; //accelerometer, magnetometer 
-
+float xyz[3];
 
 
 
@@ -359,7 +361,7 @@ void temperatureThread(void const * argument){
 		//waits forever for the mutex to become available
 		osMutexWait(mutexId, osWaitForever);
 		temperature = BSP_TSENSOR_ReadTemp();
-		sprintf(tempBuffer, "Temperature: %.2f \n", temperature);
+		sprintf(tempBuffer, "Temperature (C): %.2f \n", temperature);
 		//clears the string, releases mutex
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, tempBuffer);
@@ -371,14 +373,14 @@ void temperatureThread(void const * argument){
 void humidityThread(void const * argument){
 	BSP_HSENSOR_Init();
 	float humidity;
-	char humidityBuffer[15];
+	char humidityBuffer[20];
 	for(;;) {
 		//makes sure we have 100ms between each read
 		osDelay(100);
 		//waits forever for the mutex to become available
 		osMutexWait(mutexId, osWaitForever);
 		humidity = BSP_HSENSOR_ReadHumidity();
-		sprintf(humidityBuffer, "Humidity: %.2f \n", humidity);
+		sprintf(humidityBuffer, "Humidity (%%): %.2f \n", humidity);
 		//clears the string, releases mutex
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, humidityBuffer);
@@ -399,9 +401,9 @@ void magnetometerThread(void const * argument) {
 		osDelay(100);
 		osMutexWait(mutexId, osWaitForever);
 		BSP_MAGNETO_GetXYZ(xyz);
-		sprintf(x, "Pressure (N) x: %.5d", xyz[0]);
-		sprintf(y, " ,y: %.5d", xyz[1]);
-		sprintf(z, " ,z: %.5d \n", xyz[2]);
+		sprintf(x, "Field Intensity (gauss) x: %.3d", xyz[0]);
+		sprintf(y, ", y: %.3d", xyz[1]);
+		sprintf(z, ", z: %.3d \n", xyz[2]);
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, x);
 		strcat(buffer, y);
@@ -419,7 +421,7 @@ void pressureThread(void const * argument){
 		osDelay(100);
 		osMutexWait(mutexId, osWaitForever);
 		pressure = BSP_PSENSOR_ReadPressure();
-		sprintf(pressureBuffer, "Pressure: %.2f \n", pressure);
+		sprintf(pressureBuffer, "Pressure (kPa): %.2f \n", pressure/10);
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, pressureBuffer);
 		osMutexRelease(mutexId);
@@ -431,16 +433,16 @@ void accelerometerThread(void const * argument) {
 	BSP_ACCELERO_Init();
 	BSP_ACCELERO_LowPower(1);
 	int16_t xyz[3];
-	char x[100];
+	char x[30];
 	char y[20];
 	char z[20];
 	for(;;) {
 		osDelay(100);
 		osMutexWait(mutexId, osWaitForever);
 		BSP_ACCELERO_AccGetXYZ(xyz);
-		sprintf(x, "Acceleraion (m/s) x: %.5d", xyz[0]);
+		sprintf(x, "Acceleraion (mg) x: %.5d", xyz[0]);
 		sprintf(y, ", y: %.5d", xyz[1]);
-		sprintf(z, ", z: %.5d", xyz[2]);
+		sprintf(z, ", z: %.5d \n", xyz[2]);
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, x);
 		strcat(buffer, y);
@@ -453,17 +455,17 @@ void accelerometerThread(void const * argument) {
 void gyroscopeThread( void const * argument) {
 	BSP_GYRO_Init();
 	BSP_GYRO_LowPower(1);
-	float xyz[3];
-	char x[100];
+	//float xyz[3];
+	char x[80];
 	char y[20];
 	char z[20];
 	for(;;) {
 		osDelay(100);
 		osMutexWait(mutexId, osWaitForever);
 		BSP_GYRO_GetXYZ(xyz);
-		sprintf(x, "Rotation (degrees) x: %.5f", xyz[0]);
-		sprintf(y, ", %.5f", xyz[1]);
-		sprintf(z, ", %.5f", xyz[2]);
+		sprintf(x, "Rotation (degrees) x: %.1f", xyz[0]/10);
+		sprintf(y, ", y: %.1f", xyz[1]/10);
+		sprintf(z, ", z: %.1f \n" , xyz[2]/10);
 		memset(buffer, 0, strlen(buffer));
 		strcat(buffer, x);
 		strcat(buffer, y);
@@ -489,21 +491,21 @@ void StartDefaultTask(void const * argument)
 	usart_state = OFF;
 	
 	//Defining threads
+	osThreadDef(gyroscopeTask, gyroscopeThread, osPriorityNormal, 0, 150);
 	osThreadDef(temperatureTask, temperatureThread, osPriorityNormal, 0, 128);
 	osThreadDef(humidityTask, humidityThread, osPriorityNormal, 0, 128);
 	osThreadDef(pressureTask, pressureThread, osPriorityNormal, 0, 128);
 	osThreadDef(magnetometerTask, magnetometerThread, osPriorityNormal, 0, 128);
 	osThreadDef(accelerometerTask, accelerometerThread, osPriorityNormal, 0, 128);
-	osThreadDef(gyroscopeTask, gyroscopeThread, osPriorityNormal, 0, 128);
-	osThreadDef(usartTransmitTask, usartTransmitThread, osPriorityNormal, 0, 128);
-	
+	osThreadDef(usartTransmitTask, usartTransmitThread, osPriorityNormal, 0, 100);
+	//sensor_thread = MAGNETOMETER;
 	while(1){
 		
 		if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)){
 			button_state = ON;
 			while(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)){}
 			button_state = OFF;
-			if (timer >= 3000) {
+			if (timer >= 2000) {
 				BSP_ACCELERO_DeInit();
 				BSP_MAGNETO_DeInit();
 				BSP_GYRO_DeInit();
@@ -516,13 +518,14 @@ void StartDefaultTask(void const * argument)
 			else {
 				if(sensor_thread == MAGNETOMETER) {
 					if(usart_state == ON) {
-						osThreadTerminate(pressureThreadId);
+						BSP_GYRO_DeInit();
+						osThreadTerminate(gyroscopeThreadId);
 					}
 					else {
 						usart_state = ON;
 						usartThreadId = osThreadCreate(osThread(usartTransmitTask), NULL);
 					}
-					//stop the magnometer thread
+					//start the magnometer thread
 					magnetometerThreadId = osThreadCreate(osThread(magnetometerTask), NULL);
 					currentThreadId = magnetometerThreadId;
 					sensor_thread = TEMPERATURE;
@@ -537,34 +540,36 @@ void StartDefaultTask(void const * argument)
 				}
 				else if(sensor_thread == HUMIDITY) {
 					osThreadTerminate(temperatureThreadId);
+					BSP_ACCELERO_DeInit();
 					
-					pressureThreadId = osThreadCreate(osThread(humidityTask), NULL);
+					humidityThreadId = osThreadCreate(osThread(humidityTask), NULL);
 					currentThreadId = humidityThreadId;
-					sensor_thread = ACCELEROMETER;
+					sensor_thread = ACCELOROMETER;
 				}
-				else if(sensor_thread == ACCELEROMETER) {
+				else if(sensor_thread == ACCELOROMETER) {
 					osThreadTerminate(humidityThreadId);
 					
 					accelerometerThreadId = osThreadCreate(osThread(accelerometerTask), NULL);
 					currentThreadId = accelerometerThreadId;
-					sensor_thread = GYROSCOPE;
-				}
-				else if(sensor_thread == GYROSCOPE) {
-					BSP_ACCELERO_DeInit();
-					osThreadTerminate(accelerometerThreadId);
-					
-					gyroscopeThreadId = osThreadCreate(osThread(gyroscopeTask), NULL);
-					currentThreadId = gyroscopeThreadId;
 					sensor_thread = PRESSURE;
 				}
 				else if(sensor_thread == PRESSURE){
-					BSP_GYRO_DeInit();
-					osThreadTerminate(gyroscopeThreadId);
+					//BSP_GYRO_DeInit();
+					//BSP_ACCELERO_DeInit();
+					osThreadTerminate(accelerometerThreadId);
+					//osThreadTerminate(gyroscopeThreadId);
 					
-					magnetometerThreadId = osThreadCreate(osThread(pressureTask), NULL);
+					pressureThreadId = osThreadCreate(osThread(pressureTask), NULL);
 					currentThreadId = pressureThreadId;
-					sensor_thread = MAGNETOMETER;
+					sensor_thread = GYROSCOPE;
 				}
+				else if(sensor_thread == GYROSCOPE) {
+					osThreadTerminate(pressureThreadId);
+					
+					gyroscopeThreadId = osThreadCreate(osThread(gyroscopeTask), NULL);
+					currentThreadId = gyroscopeThreadId;
+					sensor_thread = MAGNETOMETER;
+					}
 			}
 		}
 	}
